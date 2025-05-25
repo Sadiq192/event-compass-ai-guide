@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Download, MapPin, Trash } from 'lucide-react';
+import { Input } from '@/components/ui/input'; // Import Input component
+import { Calendar, Download, MapPin, Trash, Plus } from 'lucide-react'; // Import Plus icon
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
@@ -28,29 +28,26 @@ export interface Task {
 
 export interface EventDetailsProps {
   id: string;
-  name: string;
+  title: string;
   date: string;
-  time: string;
   location: string;
   description: string;
-  requiresVenue: boolean;
-  requiresCatering: boolean;
+  organizer?: string;
   tasks: Task[];
 }
 
 const EventDetails: React.FC<EventDetailsProps> = ({ 
   id, 
-  name, 
+  title, 
   date, 
-  time, 
   location, 
   description, 
-  requiresVenue, 
-  requiresCatering,
-  tasks 
+  organizer, 
+  tasks
 }) => {
   const navigate = useNavigate();
   const [eventTasks, setEventTasks] = useState<Task[]>(tasks);
+
   
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
     weekday: 'short',
@@ -59,27 +56,110 @@ const EventDetails: React.FC<EventDetailsProps> = ({
     year: 'numeric'
   });
 
-  const toggleTask = (taskId: string) => {
-    setEventTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const toggleTask = async (taskId: string) => {
+    const taskToUpdate = eventTasks.find(task => task.id === taskId);
+    if (!taskToUpdate) return;
+
+    const newCompletedStatus = !taskToUpdate.completed;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed: newCompletedStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setEventTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, completed: newCompletedStatus } : task
+        )
+      );
+      toast.success("Task updated successfully!");
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error("Failed to update task. Please try again.");
+    }
   };
 
   const completedTasksCount = eventTasks.filter(task => task.completed).length;
   const progress = eventTasks.length > 0 
     ? Math.round((completedTasksCount / eventTasks.length) * 100) 
     : 0;
-  
+
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const handleAddTask = async () => {
+    if (!newTaskTitle.trim()) {
+      toast.error("Task title cannot be empty.");
+      return;
+    }
+    try {
+      const response = await fetch(`http://localhost:5000/api/tasks/${id}`, { // eventId is 'id' here
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTaskTitle }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newTask = await response.json();
+      setEventTasks(prevTasks => [...prevTasks, { ...newTask, id: newTask._id }]);
+      setNewTaskTitle('');
+      toast.success("Task added successfully!");
+    } catch (error) {
+      console.error('Error adding task:', error);
+      toast.error("Failed to add task. Please try again.");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setEventTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      toast.success("Task deleted successfully!");
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error("Failed to delete task. Please try again.");
+    }
+  };
+
   const handleEdit = () => {
     navigate(`/edit-event/${id}`);
   };
   
-  const handleDelete = () => {
-    console.log(`Deleting event ${id}`);
-    toast.success("Event deleted successfully");
-    navigate('/');
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("Event deleted successfully!");
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.error("Failed to delete event. Please try again.");
+    }
   };
   
   const handleDownloadPDF = () => {
@@ -90,7 +170,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex flex-col-reverse gap-4 md:flex-row md:justify-between md:items-center">
-        <h1 className="text-2xl font-bold">{name}</h1>
+        <h1 className="text-2xl font-bold">{title}</h1>
         
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleEdit}>
@@ -130,8 +210,8 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             <div className="flex items-start gap-2">
               <Calendar className="h-5 w-5 mt-0.5 text-event-primary" />
               <div>
-                <p className="font-medium">Date & Time</p>
-                <p className="text-sm text-muted-foreground">{formattedDate} at {time}</p>
+                <p className="font-medium">Date</p>
+                <p className="text-sm text-muted-foreground">{formattedDate}</p>
               </div>
             </div>
             
@@ -150,15 +230,13 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             <p className="font-medium mb-1">Description</p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
-          
-          <div className="flex flex-wrap gap-3">
-            <div className="border rounded-md px-3 py-1 text-xs">
-              {requiresVenue ? "Venue Required" : "No Venue Required"}
+
+          {organizer && (
+            <div>
+              <p className="font-medium mb-1">Organizer</p>
+              <p className="text-sm text-muted-foreground">{organizer}</p>
             </div>
-            <div className="border rounded-md px-3 py-1 text-xs">
-              {requiresCatering ? "Catering Required" : "No Catering Required"}
-            </div>
-          </div>
+          )}
           
           <Button 
             variant="outline" 
@@ -170,7 +248,6 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           </Button>
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
@@ -182,6 +259,20 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           <Progress value={progress} className="h-2" />
         </CardHeader>
         <CardContent className="pt-4">
+          <div className="flex space-x-2 mb-4">
+            <Input
+              placeholder="Add a new task"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddTask();
+                }
+              }}
+            />
+            <Button onClick={handleAddTask}>Add Task</Button>
+          </div>
+
           {eventTasks.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No tasks available</p>
           ) : (
@@ -189,19 +280,29 @@ const EventDetails: React.FC<EventDetailsProps> = ({
               {eventTasks.map(task => (
                 <div 
                   key={task.id}
-                  className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50"
+                  className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50"
                 >
-                  <Checkbox 
-                    id={`task-${task.id}`}
-                    checked={task.completed}
-                    onCheckedChange={() => toggleTask(task.id)}
-                  />
-                  <label 
-                    htmlFor={`task-${task.id}`}
-                    className={`text-sm cursor-pointer flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id={`task-${task.id}`}
+                      checked={task.completed}
+                      onCheckedChange={() => toggleTask(task.id)}
+                    />
+                    <label 
+                      htmlFor={`task-${task.id}`}
+                      className={`text-sm cursor-pointer flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+                    >
+                      {task.title}
+                    </label>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="text-muted-foreground hover:text-destructive"
                   >
-                    {task.title}
-                  </label>
+                    <Trash className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>

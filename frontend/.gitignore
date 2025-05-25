@@ -1,0 +1,13 @@
+# Frontend
+node_modules
+dist
+.env
+.vite
+*.log
+*.tsbuildinfo
+coverage
+
+# General
+.DS_Store
+.vscode/
+.idea/

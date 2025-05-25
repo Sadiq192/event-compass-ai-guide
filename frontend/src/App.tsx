@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateEvent from "./pages/CreateEvent";
 import EventDetailsPage from "./pages/EventDetails";
 import Layout from "./components/Layout";
+import EditEvent from "./pages/EditEvent"; // Import the new EditEvent component
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/event/:id" element={<EventDetailsPage />} />
+            <Route path="/edit-event/:id" element={<EditEvent />} /> {/* New route for editing */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
