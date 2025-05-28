@@ -13,4 +13,14 @@ const connectDB = async () => {
   }
 };
 
+const EventSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String },
+  date: { type: Date, required: true },
+  location: { type: String },
+  organizer: { type: String }, // Assuming this is the email
+  createdAt: { type: Date, default: Date.now },
+  reminderSent: { type: Boolean, default: true }, // Added
+});
+
 module.exports = connectDB;

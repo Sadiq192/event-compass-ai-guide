@@ -12,9 +12,10 @@ export interface EventCardProps {
   location: string;
   description: string;
   organizer?: string;
+  isUpcoming?: boolean; // Added isUpcoming prop
 }
 
-const EventCard: React.FC<EventCardProps> = ({ id, title, date, location, description, organizer }) => {
+const EventCard: React.FC<EventCardProps> = ({ id, title, date, location, description, organizer, isUpcoming }) => {
   const navigate = useNavigate();
   
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
@@ -29,9 +30,9 @@ const EventCard: React.FC<EventCardProps> = ({ id, title, date, location, descri
   };
 
   return (
-    <Card className="card-hover">
+    <Card className={`card-hover ${isUpcoming ? 'bg-yellow-50 border-l-4 border-yellow-500 shadow-md' : ''}`}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardTitle className={`text-lg font-semibold ${isUpcoming ? 'text-yellow-800' : ''}`}>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex items-start gap-2 text-sm text-muted-foreground">

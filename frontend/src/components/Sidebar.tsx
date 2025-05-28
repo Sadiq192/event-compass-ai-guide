@@ -12,9 +12,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const navItems = [
-    { icon: Home, label: 'Dashboard', path: '/' },
-    { icon: Plus, label: 'Create Event', path: '/create-event' },
-    { icon: Calendar, label: 'Events', path: '/events' }
+    { icon: Home, label: 'Dashboard', path: '/' }, // Dashboard now at root
+    { icon: Calendar, label: 'All Events', path: '/all-events' }, // All events at /all-events
+    { icon: Plus, label: 'Create Event', path: '/create-event' }
   ];
 
   const handleLogout = () => {
@@ -55,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
-          <h1 className="text-xl font-bold text-white">Event Manager</h1>
+          <h1 className="text-xl font-bold text-white">Eventify</h1>
         </div>
         
         {/* Nav items */}

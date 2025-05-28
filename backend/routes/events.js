@@ -2,6 +2,27 @@ const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 
+
+// PATCH /api/events/:id
+router.patch('/:id', async (req, res) => {
+  try {
+    const { reminderSent } = req.body;
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { reminderSent },
+      { new: true }
+    );
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    res.json(event);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 // @route   POST api/events
 // @desc    Create a new event
 // @access  Public (for now)
@@ -12,7 +33,10 @@ router.post('/', async (req, res) => {
       description: req.body.description,
       date: req.body.date,
       location: req.body.location,
-      organizer: req.body.organizer,
+      cateringNeeded: req.body.cateringNeeded,
+      venueNeeded: req.body.venueNeeded,
+      organizer: req.body.organizer, // 
+
     });
 
     const event = await newEvent.save();
@@ -39,6 +63,7 @@ router.get('/', async (req, res) => {
 // @route   GET api/events/:id
 // @desc    Get event by ID
 // @access  Public (for now)
+
 router.get('/:id', async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -61,7 +86,7 @@ router.get('/:id', async (req, res) => {
 // @desc    Update an event by ID
 // @access  Public (for now)
 router.put('/:id', async (req, res) => {
-  const { title, description, date, location, organizer } = req.body;
+  const { title, description, date, location, cateringNeeded, venueNeeded, organizer } = req.body;
 
   // Build event object
   const eventFields = {};
@@ -69,7 +94,11 @@ router.put('/:id', async (req, res) => {
   if (description) eventFields.description = description;
   if (date) eventFields.date = date;
   if (location) eventFields.location = location;
+  if (cateringNeeded) eventFields.cateringNeeded = cateringNeeded;
+  if (venueNeeded) eventFields.venueNeeded = venueNeeded;
   if (organizer) eventFields.organizer = organizer;
+
+
 
   try {
     let event = await Event.findById(req.params.id);
@@ -116,3 +145,10 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+// 
+
+
+
